@@ -1,120 +1,123 @@
 #include "../include/philo.h"
 
-void	*one_philo()
-{
-	t_philo	*data;
-	
-	data = (t_philo *)&philo()->philos[0];
-	while (!philo()->ready_to_start)
-		;
-	print_status(TAKEN_FORK, data);
-	while(!philo()->finished)
-		usleep(200);
-	return NULL;
-}
-
-void	thinking(t_philo *data_philo)
-{
-	print_status(THINKING, data_philo);
-}
-
-void	eat(t_philo *data_philo)
-{
-	pthread_mutex_lock(&data_philo->first_fork->mut);
-	print_status(TAKEN_FORK, data_philo);
-	pthread_mutex_lock(&data_philo->second_fork->mut);
-	print_status(TAKEN_FORK, data_philo);
-	data_philo->time_since_eat = get_time();
-	data_philo->meals_nbr++;
-	print_status(EATING, data_philo);
-	usleep(philo()->time_eat);
-	if (philo()->eat_times && data_philo->meals_nbr == philo()->eat_times)
-	{
-		pthread_mutex_lock(&data_philo->mutex_philo);
-		data_philo->finished_eating = true;
-		pthread_mutex_unlock(&data_philo->mutex_philo);
-	}
-	pthread_mutex_unlock(&data_philo->first_fork->mut);
-	pthread_mutex_unlock(&data_philo->second_fork->mut);
-}
-// long	get_time2()
-// {
-// 	struct timeval	tv;
-
-// 	if (gettimeofday(&tv, NULL))
-// 		printf("time of days failed\n");
-// 	return ((tv.tv_sec * 1e6) + tv.tv_usec);
-// }
-
-// void	better_usleep(long usec)
-// {
-// 	long	start;
-// 	long	elapsed;
-// 	long	rem;
-
-// 	start = get_time2();
-// 	while (get_time2() - start < usec)
-// 	{
-// 		if (philo()->finished)
-// 			break ;
-// 		elapsed = get_time2() - start;
-// 		rem = usec - elapsed;
-// 		if (rem > 1e3)
-// 			usleep(rem / 2);
-// 		else
-// 			while(get_time2() - start < usec)
-// 				;
-// 	}
-// }
-
-void	*dinner_create(void	*data)
-{
-	t_philo *data_philo;
-
-	data_philo = (t_philo *)data;
-	while (!philo()->ready_to_start)
-		;
-	pthread_mutex_lock(&data_philo->mutex_philo);
-	data_philo->time_since_eat = get_time();
-	pthread_mutex_unlock(&data_philo->mutex_philo);
-	while (!philo()->finished)
-	{
-		if (data_philo->finished_eating)
-			break ;
-		eat(data_philo);
-		print_status(SLEEPING, data_philo);
-		//better_usleep(philo()->time_sleep);
-		usleep(philo()->time_sleep);
-		thinking(data_philo);
-	}
-	return NULL;
-}
-
-void	dinner_init(void)
+static void	*monitor_deaths()
 {
 	int		i;
+	t_philo	*cur;
 
+	cur = philo()->philos;
 	i = 0;
-	if (philo()->eat_times == 0)
-		return;
-	if(philo()->num_philo == 1)
-		pthread_create(&(philo())->philos[0].thread_id, NULL, one_philo, NULL);
-	else
+	while (cur && i != philo()->num_philos)
 	{
-		while (i < philo()->num_philo)
-		{
-			if (pthread_create(&(philo()->philos[i].thread_id), NULL, 
-				dinner_create, &(philo()->philos[i])) != 0)
-				error_message(PTHREADCREATE);
+		pthread_mutex_lock(philo()->mutex_monitor);
+		if (cur->meals_nbr == philo()->nbr_meals)
 			i++;
+		if (tv_since_start() >= cur->time_until_dead && cur->meals_nbr != philo()->nbr_meals)
+		{
+			pthread_mutex_unlock(philo()->mutex_monitor);
+			pthread_mutex_lock(philo()->mutex_is_dead);
+			philo()->is_dead = 1;
+			pthread_mutex_unlock(philo()->mutex_is_dead);
+			print_status(cur, DIED);
+			return NULL;
+		}
+		pthread_mutex_unlock(philo()->mutex_monitor);
+		if (philo()->num_philos != 1)
+			cur = cur->next;
+	}
+	return NULL;
+}
+
+static void	sleep_tight(t_philo *data)
+{
+	if (!someone_dead())
+		return ;
+	print_status(data, SLEEPING);
+	only_sleep(philo()->time_sleep);
+}
+
+static void	eat(t_philo *data)
+{
+	pthread_mutex_t *one;
+	pthread_mutex_t *two;
+
+	if (!someone_dead())
+		return ;
+	one = data->first_fork->mut;
+	two = data->second_fork->mut;
+	if (data->philo_id % 2 == 0)
+	{
+		one = data->second_fork->mut;
+		two = data->first_fork->mut;
+	}
+	pthread_mutex_lock(one);
+	pthread_mutex_lock(two);
+	pthread_mutex_lock(philo()->mutex_monitor);
+	data->time_until_dead = tv_since_start() + philo()->time_die; //tempo que ele tem para comer antes de morrer
+	data->meals_nbr++;
+	pthread_mutex_unlock(philo()->mutex_monitor);
+	print_status(data, TAKEN_FORK);
+	print_status(data, TAKEN_FORK);
+	print_status(data, EATING);
+	only_sleep(philo()->time_eat);
+	pthread_mutex_unlock(two);
+	pthread_mutex_unlock(one);
+	sleep_tight(data);
+}
+
+static void *routine(void *dat)
+{
+	t_philo	*data;
+
+	data = (t_philo *)dat;
+	if (philo()->num_philos == 1)
+	{
+		print_status(data, TAKEN_FORK);
+		while (philo()->is_dead != 1)
+			usleep(200);
+		return NULL;
+	}
+	if (data->philo_id % 2 != 0)
+		only_sleep((philo()->time_eat * 2) - philo()->time_sleep);
+	while(someone_dead() && data->meals_nbr != philo()->nbr_meals)
+	{
+		eat(data);
+		if (philo()->num_philos % 2 == 0 && philo()->time_eat == philo()->time_sleep)
+			continue ;
+		if (someone_dead() && data->meals_nbr != philo()->nbr_meals)
+		{
+			print_status(data, THINKING);
+			only_sleep((philo()->time_eat * 2) - philo()->time_sleep);
 		}
 	}
-	pthread_create(&(philo()->monitor), NULL, monitor_deaths, NULL);
-	philo()->time_start = get_time();
-	pthread_mutex_lock(&(philo())->mutex_prog);
-	philo()->ready_to_start = true;
-	pthread_mutex_unlock(&(philo())->mutex_prog);
-	join_threads();
-	//se chegar aqui significa que estao todos cheios
-	join_monitor();
+	if (someone_dead() && data->meals_nbr != philo()->nbr_meals)
+		print_status(data, THINKING);
+	return NULL;
+}
+
+void	dinner_init()
+{
+	int		i;
+	t_philo	*cur;
+
+	i = -1;
+	cur = philo()->philos;
+	if (pthread_create(&philo()->monitor, NULL, monitor_deaths, NULL) != 0)
+		return ;
+	while (++i < philo()->num_philos)
+	{
+		if (pthread_create(&cur->thread_id, NULL, routine, cur) != 0)
+			return ;
+		cur = cur->next;
+	}
+	cur = philo()->philos;
+	i = 0;
+	if (pthread_join(philo()->monitor, NULL) != 0)
+			return ;
+	while (++i < philo()->num_philos)
+	{
+		if (pthread_join(cur->thread_id, NULL) != 0)
+			return ;
+		cur = cur->next;
+	}
 }

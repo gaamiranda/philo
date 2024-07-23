@@ -1,7 +1,7 @@
 NAME = philo
 CC = cc
 CFLAGS = -Wall -Wextra -Werror -pthread -I include
-SRC = src/main.c src/error.c src/utils.c src/dinner.c src/dinner_init.c src/sync.c src/argc_argv.c src/monitor.c
+SRC = src/main.c src/error.c src/init_philo.c src/argc_argv.c src/utils.c src/dinner.c src/clean.c
 OBJ_DIR = obj
 OBJ = $(addprefix $(OBJ_DIR)/, $(SRC:.c=.o))
 

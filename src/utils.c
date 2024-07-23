@@ -1,72 +1,50 @@
 #include "../include/philo.h"
 
-long	get_time()
+long	tv_since_start()
 {
 	struct timeval	tv;
+	long			temp;
 
-	if (gettimeofday(&tv, NULL))
-		printf("time of days failed\n");
-	return ((tv.tv_sec * 1000) + (tv.tv_usec / 1000));
+	gettimeofday(&tv, NULL);
+	temp = ((tv.tv_sec * 1000) + (tv.tv_usec / 1000)) - philo()->start_time;
+	return temp;
 }
 
-
-
-void	join_threads()
+void	print_status(t_philo *data, t_pstate code)
 {
-	int		i;
+	pthread_mutex_lock(philo()->mutex_message);
+	if (code == TAKEN_FORK)
+		printf("%ld %d has taken a fork\n", tv_since_start(), data->philo_id);
+	else if (code == EATING)
+		printf("%ld %d is eating\n", tv_since_start(), data->philo_id);
+	else if (code == THINKING)
+		printf("%ld %d is thinking\n", tv_since_start(), data->philo_id);
+	else if (code == SLEEPING)
+		printf("%ld %d is sleeping\n", tv_since_start(), data->philo_id);
+	else if (code == DIED)
+		printf("%ld %d died\n", tv_since_start(), data->philo_id);
+	pthread_mutex_unlock(philo()->mutex_message);
+}
 
-	i = 0;
-	while (i < philo()->num_philo)
+void	only_sleep(long time)
+{
+	time += tv_since_start();
+	while (tv_since_start() < time)
 	{
-		if (pthread_join(philo()->philos[i].thread_id, NULL) != 0)
-			printf("Failed to join");
-		i++;
+		if (!someone_dead())
+			return ;
+		usleep(1e2);
 	}
 }
 
-void	print_status(t_pstate status, t_philo *data)
+int		someone_dead()
 {
-	long	elapsed;
-
-	elapsed = get_time() - philo()->time_start;
-	if (data->finished_eating)
-		return ;
-	pthread_mutex_lock(&(philo())->mutex_write);
-	if ((status == TAKEN_FORK) && !philo()->finished)
-		printf("%ld %d has taken a fork\n", elapsed, data->philo_id);
-	else if (status == EATING && !philo()->finished)
-		printf("%ld %d is eating\n", elapsed, data->philo_id);
-	else if (status == SLEEPING && !philo()->finished)
-		printf("%ld %d is sleeping\n", elapsed, data->philo_id);
-	else if (status == THINKING && !philo()->finished)
-		printf("%ld %d is thinking\n", elapsed, data->philo_id);
-	else if (status == DIED)
-		printf("%ld %d died\n", elapsed, data->philo_id);
-	pthread_mutex_unlock(&(philo())->mutex_write);
-}
-
-void	join_monitor()
-{
-	pthread_mutex_lock(&philo()->mutex_prog);
-	philo()->finished = true;
-	pthread_mutex_unlock(&philo()->mutex_prog);
-	pthread_join(philo()->monitor, NULL);
-}
-
-void	final_clean()
-{
-	int		i;
-	t_philo	*data;
-
-	i = 0;
-	while (i < philo()->num_philo)
+	pthread_mutex_lock(philo()->mutex_is_dead);
+	if (philo()->is_dead)
 	{
-		data = &philo()->philos[i];
-		pthread_mutex_destroy(&data->mutex_philo);
-		i++;
+		pthread_mutex_unlock(philo()->mutex_is_dead);
+		return 0;
 	}
-	pthread_mutex_destroy(&philo()->mutex_prog);
-	pthread_mutex_destroy(&philo()->mutex_write);
-	free(philo()->forks);
-	free(philo()->philos);
+	pthread_mutex_unlock(philo()->mutex_is_dead);
+	return 1;
 }

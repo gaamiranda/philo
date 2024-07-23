@@ -5,8 +5,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <sys/time.h>
 #include <stdbool.h>
+#include <sys/time.h>
 
 typedef enum e_errors
 {
@@ -17,6 +17,18 @@ typedef enum e_errors
 	PTHREADCREATE,
 }	t_errors;
 
+typedef enum e_mtx_codes{
+	INIT,
+	LOCK,
+	UNLOCK,
+	DESTROY,
+}	t_mtx_codes;
+
+typedef enum e_thread_codes{
+	CREATE,
+	JOIN,
+}	t_thread_codes;
+
 typedef enum e_pstate{
 	EATING,
 	SLEEPING,
@@ -26,51 +38,48 @@ typedef enum e_pstate{
 }	t_pstate;
 
 typedef struct s_forks{
-	pthread_mutex_t	mut;
-	int 	fork_id;
+	pthread_mutex_t	*mut;
+	int 			is_locked;
 }	t_forks;
 
 typedef struct s_philo{
 	int				philo_id;
+	int				meals_nbr;
+	long			time_until_dead;
+	pthread_t		thread_id;
 	t_forks			*first_fork;
 	t_forks			*second_fork;
-	int				meals_nbr;
-	bool			finished_eating;
-	long			time_since_eat;
-	pthread_t		thread_id;
-	pthread_mutex_t mutex_philo;
+	struct s_philo	*prev;
+	struct s_philo	*next;
 }	t_philo;
 
 
 typedef struct s_program{
-	long			num_philo;
+	long			is_dead;
+	long			num_philos;
 	long			time_die;
 	long			time_eat;
 	long			time_sleep;
-	long			eat_times;
-	long			time_start;
-	bool			finished;
-	bool			ready_to_start;
-	pthread_mutex_t	mutex_prog;
-	pthread_mutex_t	mutex_write;
-	pthread_t		monitor;
-	t_forks			*forks;
+	long			nbr_meals;
+	long			start_time;
 	t_philo			*philos;
+	pthread_t		monitor;
+	pthread_mutex_t	*mutex_message;
+	pthread_mutex_t	*mutex_is_dead;
+	pthread_mutex_t	*mutex_monitor;
 }	t_program;
 
 int			check_args(int argc, char **argv);
 void		error_message(int num);
 int			check_if_num(char *str);
 long		ft_atol(char *str);
-int			init_dinner();
 t_program	*philo();
-void		dinner_init(void);
-//void		wait_everyone();
-long		get_time();
-void		print_status(t_pstate status, t_philo *data);
-void		join_threads();
-void		*monitor_deaths();
-void		join_monitor();
-void		final_clean();
-
+void		init_philos();
+long		tv_since_start();
+void		dinner_init();
+void	forks_init();
+void	print_status(t_philo *data, t_pstate code);
+void	only_sleep(long time);
+int		someone_dead();
+void	clean_everything();
 #endif
