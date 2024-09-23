@@ -15,6 +15,7 @@ typedef enum e_errors
 	INVALIDTS,
 	ERRORDINNER,
 	PTHREADCREATE,
+	INVALIDNP,
 }	t_errors;
 
 typedef enum e_mtx_codes{

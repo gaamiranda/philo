@@ -15,5 +15,7 @@ void	error_message(int num)
 		msg = "Error creating dinner";
 	else if (num == 4)
 		msg = "Error creating thread";
+	else if (num == 5)
+		msg = "Invalid philo number";
 	printf("%s\n", msg);
 }

@@ -39,7 +39,7 @@ int		init_struct(char **argv, int argc)
 	else
 		philo()->nbr_meals = -1;
 	if (philo()->num_philos > 200)
-		printf("Too many philos\n");
+		return (2);
 	philo()->is_dead = 0;
 	philo()->monitor = 0;
 	philo()->mutex_is_dead = mutex_create();
@@ -53,6 +53,9 @@ int		init_struct(char **argv, int argc)
 
 int main(int argc, char **argv)
 {
+	int status_code;
+
+	status_code = 0;
 	if (check_args(argc, argv) == 1)
 	{
 		error_message(INVALIDARGC);
@@ -63,9 +66,13 @@ int main(int argc, char **argv)
 		error_message(INVALIDARGV);
 		return 2;
 	}
-	if (init_struct(argv, argc) != 0)
+	status_code = init_struct(argv, argc);
+	if (status_code != 0)
 	{
-		error_message(INVALIDTS);
+		if (status_code == 2)
+			error_message(INVALIDNP);
+		else
+			error_message(INVALIDTS);
 		return 3;
 	}
 	dinner_init();

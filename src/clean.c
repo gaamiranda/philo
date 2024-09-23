@@ -50,7 +50,7 @@ void	clean_everything()
 	free(philo()->mutex_is_dead);
 	if (pthread_mutex_destroy(philo()->mutex_message) != 0)
 		printf("Error destroying mutex\n");
-		free(philo()->mutex_message);
+	free(philo()->mutex_message);
 	if (pthread_mutex_destroy(philo()->mutex_monitor) != 0)
 		printf("Error destroying mutex\n");
 	free(philo()->mutex_monitor);
