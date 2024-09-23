@@ -1,6 +1,6 @@
 #include "../include/philo.h"
 
-static void	*monitor_deaths()
+static void	monitor_dd(void)
 {
 	int		i;
 	t_philo	*cur;
@@ -12,20 +12,21 @@ static void	*monitor_deaths()
 		pthread_mutex_lock(philo()->mutex_monitor);
 		if (cur->meals_nbr == philo()->nbr_meals)
 			i++;
-		if (tv_since_start() >= cur->time_until_dead && cur->meals_nbr != philo()->nbr_meals)
+		if (tv_since_start() >= cur->time_until_dead
+			&& cur->meals_nbr != philo()->nbr_meals)
 		{
 			pthread_mutex_unlock(philo()->mutex_monitor);
 			pthread_mutex_lock(philo()->mutex_is_dead);
 			philo()->is_dead = 1;
 			pthread_mutex_unlock(philo()->mutex_is_dead);
 			print_status(cur, DIED);
-			return NULL;
+			return ;
 		}
 		pthread_mutex_unlock(philo()->mutex_monitor);
 		if (philo()->num_philos != 1)
 			cur = cur->next;
 	}
-	return NULL;
+	return ;
 }
 
 static void	sleep_tight(t_philo *data)
@@ -38,8 +39,8 @@ static void	sleep_tight(t_philo *data)
 
 static void	eat(t_philo *data)
 {
-	pthread_mutex_t *one;
-	pthread_mutex_t *two;
+	pthread_mutex_t	*one;
+	pthread_mutex_t	*two;
 
 	if (!someone_dead())
 		return ;
@@ -53,7 +54,7 @@ static void	eat(t_philo *data)
 	pthread_mutex_lock(one);
 	pthread_mutex_lock(two);
 	pthread_mutex_lock(philo()->mutex_monitor);
-	data->time_until_dead = tv_since_start() + philo()->time_die; //tempo que ele tem para comer antes de morrer
+	data->time_until_dead = tv_since_start() + philo()->time_die;
 	data->meals_nbr++;
 	pthread_mutex_unlock(philo()->mutex_monitor);
 	print_status(data, TAKEN_FORK);
@@ -65,24 +66,18 @@ static void	eat(t_philo *data)
 	sleep_tight(data);
 }
 
-static void *routine(void *dat)
+static void	*routine(void *dat)
 {
 	t_philo	*data;
 
 	data = (t_philo *)dat;
-	if (philo()->num_philos == 1)
-	{
-		print_status(data, TAKEN_FORK);
-		while (philo()->is_dead != 1)
-			usleep(200);
-		return NULL;
-	}
 	if (data->philo_id % 2 != 0)
 		only_sleep((philo()->time_eat * 2) - philo()->time_sleep);
-	while(someone_dead() && data->meals_nbr != philo()->nbr_meals)
+	while (someone_dead() && data->meals_nbr != philo()->nbr_meals)
 	{
 		eat(data);
-		if (philo()->num_philos % 2 == 0 && philo()->time_eat == philo()->time_sleep)
+		if (philo()->num_philos % 2 == 0
+			&& philo()->time_eat == philo()->time_sleep)
 			continue ;
 		if (someone_dead() && data->meals_nbr != philo()->nbr_meals)
 		{
@@ -92,18 +87,20 @@ static void *routine(void *dat)
 	}
 	if (someone_dead() && data->meals_nbr != philo()->nbr_meals)
 		print_status(data, THINKING);
-	return NULL;
+	return (NULL);
 }
 
-void	dinner_init()
+void	dinner_init(void)
 {
 	int		i;
 	t_philo	*cur;
 
 	i = -1;
 	cur = philo()->philos;
-	if (pthread_create(&philo()->monitor, NULL, monitor_deaths, NULL) != 0)
+	if (pthread_create(&philo()->monitor, NULL, (void *)monitor_dd, NULL) != 0)
 		return ;
+	if (philo()->num_philos == 1)
+		return (handle_one_philo());
 	while (++i < philo()->num_philos)
 	{
 		if (pthread_create(&cur->thread_id, NULL, routine, cur) != 0)
@@ -113,7 +110,7 @@ void	dinner_init()
 	cur = philo()->philos;
 	i = 0;
 	if (pthread_join(philo()->monitor, NULL) != 0)
-			return ;
+		return ;
 	while (++i < philo()->num_philos)
 	{
 		if (pthread_join(cur->thread_id, NULL) != 0)

@@ -6,7 +6,7 @@ static t_philo	*philo_create(int id)
 
 	new_philo = malloc(sizeof(t_philo));
 	if (!new_philo)
-		return NULL;
+		return (NULL);
 	new_philo->philo_id = id;
 	new_philo->meals_nbr = 0;
 	new_philo->thread_id = 0;
@@ -15,10 +15,10 @@ static t_philo	*philo_create(int id)
 	new_philo->next = NULL;
 	new_philo->prev = NULL;
 	new_philo->time_until_dead = tv_since_start() + philo()->time_die;
-	return new_philo;
+	return (new_philo);
 }
 
-static void ll_philo(t_philo *phil)
+static void	ll_philo(t_philo *phil)
 {
 	t_philo	*cur;
 
@@ -39,7 +39,7 @@ static void ll_philo(t_philo *phil)
 	}
 }
 
-void	init_philos()
+void	init_philos(void)
 {
 	t_philo	*new_philo;
 	int		i;
@@ -53,26 +53,26 @@ void	init_philos()
 	forks_init();
 }
 
-static t_forks	*give_fork()
+static t_forks	*give_fork(void)
 {
 	t_forks	*new_fork;
 
 	new_fork = malloc(sizeof(t_forks));
 	if (!new_fork)
-		return NULL;
+		return (NULL);
 	new_fork->is_locked = 0;
 	new_fork->mut = malloc(sizeof(pthread_mutex_t));
-	if(!new_fork->mut)
-		return NULL;
+	if (!new_fork->mut)
+		return (NULL);
 	if (pthread_mutex_init(new_fork->mut, NULL) != 0)
 	{
 		printf("Failed to initialize fork mutex>\n");
-		return NULL;
+		return (NULL);
 	}
-	return new_fork;
+	return (new_fork);
 }
 
-void	forks_init()
+void	forks_init(void)
 {
 	int		i;
 
@@ -83,7 +83,7 @@ void	forks_init()
 		{
 			philo()->philos->first_fork = give_fork();
 			if (philo()->num_philos == 1)
-				break;
+				break ;
 			philo()->philos->next->second_fork = philo()->philos->first_fork;
 		}
 		philo()->philos = philo()->philos->next;

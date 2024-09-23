@@ -1,13 +1,13 @@
 #include "../include/philo.h"
 
-long	tv_since_start()
+long	tv_since_start(void)
 {
 	struct timeval	tv;
 	long			temp;
 
 	gettimeofday(&tv, NULL);
 	temp = ((tv.tv_sec * 1000) + (tv.tv_usec / 1000)) - philo()->start_time;
-	return temp;
+	return (temp);
 }
 
 void	print_status(t_philo *data, t_pstate code)
@@ -37,14 +37,25 @@ void	only_sleep(long time)
 	}
 }
 
-int		someone_dead()
+int	someone_dead(void)
 {
 	pthread_mutex_lock(philo()->mutex_is_dead);
 	if (philo()->is_dead)
 	{
 		pthread_mutex_unlock(philo()->mutex_is_dead);
-		return 0;
+		return (0);
 	}
 	pthread_mutex_unlock(philo()->mutex_is_dead);
-	return 1;
+	return (1);
+}
+
+void	handle_one_philo(void)
+{
+	print_status(philo()->philos, TAKEN_FORK);
+	while (philo()->is_dead != 1)
+		usleep(200);
+	if (pthread_join(philo()->monitor, NULL) != 0)
+		return ;
+	if (pthread_join(philo()->philos->thread_id, NULL) != 0)
+		return ;
 }

@@ -1,12 +1,12 @@
 #include "../include/philo.h"
 
-static void forks()
+static void	forks(void)
 {
 	int		i;
 
 	i = 0;
 	if (!philo()->philos)
-		return;
+		return ;
 	while (++i <= philo()->philos->philo_id)
 	{
 		if (philo()->philos->first_fork->mut)
@@ -23,12 +23,12 @@ static void forks()
 	}
 }
 
-static void philos()
+static void	philos(void)
 {
 	t_philo	*temp;
 
 	if (!philo()->philos)
-		return;
+		return ;
 	if (philo()->num_philos == 1)
 	{
 		free(philo()->philos);
@@ -43,7 +43,7 @@ static void philos()
 	}
 }
 
-void	clean_everything()
+void	clean_everything(void)
 {
 	if (pthread_mutex_destroy(philo()->mutex_is_dead) != 0)
 		printf("Error destroying mutex\n");

@@ -1,15 +1,15 @@
 #include "../include/philo.h"
 
-t_program	*philo()
+t_program	*philo(void)
 {
 	static t_program	philo;
 
 	return (&philo);
 }
 
-static pthread_mutex_t	*mutex_create()
+static pthread_mutex_t	*mutex_create(void)
 {
-	pthread_mutex_t *mut;
+	pthread_mutex_t	*mut;
 
 	mut = malloc(sizeof(pthread_mutex_t));
 	if (!mut)
@@ -17,12 +17,12 @@ static pthread_mutex_t	*mutex_create()
 	if (pthread_mutex_init(mut, NULL) != 0)
 	{
 		printf("Error initializing mutex\n");
-		return NULL;
+		return (NULL);
 	}
-	return mut;
+	return (mut);
 }
 
-int		init_struct(char **argv, int argc)
+int	init_struct(char **argv, int argc)
 {
 	struct timeval	tv;
 
@@ -30,10 +30,10 @@ int		init_struct(char **argv, int argc)
 	philo()->time_die = ft_atol(argv[2]);
 	philo()->time_eat = ft_atol(argv[3]);
 	philo()->time_sleep = ft_atol(argv[4]);
-	if (philo()->time_eat < 60 
-		|| philo()->time_die < 60 
+	if (philo()->time_eat < 60
+		|| philo()->time_die < 60
 		|| philo()->time_sleep < 60 || philo()->num_philos == 0)
-		return 1;
+		return (1);
 	if (argc == 6)
 		philo()->nbr_meals = ft_atol(argv[5]);
 	else
@@ -48,23 +48,23 @@ int		init_struct(char **argv, int argc)
 	gettimeofday(&tv, NULL);
 	philo()->start_time = (tv.tv_sec * 1000) + (tv.tv_usec / 1000);
 	init_philos();
-	return 0;
+	return (0);
 }
 
-int main(int argc, char **argv)
+int	main(int argc, char **argv)
 {
-	int status_code;
+	int		status_code;
 
 	status_code = 0;
 	if (check_args(argc, argv) == 1)
 	{
 		error_message(INVALIDARGC);
-		return 1;
+		return (1);
 	}
 	else if (check_args(argc, argv) == 2)
 	{
 		error_message(INVALIDARGV);
-		return 2;
+		return (2);
 	}
 	status_code = init_struct(argv, argc);
 	if (status_code != 0)
@@ -73,9 +73,9 @@ int main(int argc, char **argv)
 			error_message(INVALIDNP);
 		else
 			error_message(INVALIDTS);
-		return 3;
+		return (3);
 	}
 	dinner_init();
 	clean_everything();
-	return 0;
+	return (0);
 }
