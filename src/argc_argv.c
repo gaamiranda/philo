@@ -49,3 +49,19 @@ long	ft_atol(char *str)
 	}
 	return (total);
 }
+
+void	print_status(t_philo *data, t_pstate code)
+{
+	pthread_mutex_lock(philo()->mutex_message);
+	if (code == TAKEN_FORK)
+		printf("%ld %d has taken a fork\n", tv_since_start(), data->philo_id);
+	else if (code == EATING)
+		printf("%ld %d is eating\n", tv_since_start(), data->philo_id);
+	else if (code == THINKING)
+		printf("%ld %d is thinking\n", tv_since_start(), data->philo_id);
+	else if (code == SLEEPING)
+		printf("%ld %d is sleeping\n", tv_since_start(), data->philo_id);
+	else if (code == DIED)
+		printf("%ld %d died\n", tv_since_start(), data->philo_id);
+	pthread_mutex_unlock(philo()->mutex_message);
+}

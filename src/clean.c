@@ -45,15 +45,15 @@ static void	philos(void)
 
 void	clean_everything(void)
 {
-	if (pthread_mutex_destroy(philo()->mutex_is_dead) != 0)
-		printf("Error destroying mutex\n");
-	free(philo()->mutex_is_dead);
 	if (pthread_mutex_destroy(philo()->mutex_message) != 0)
 		printf("Error destroying mutex\n");
 	free(philo()->mutex_message);
 	if (pthread_mutex_destroy(philo()->mutex_monitor) != 0)
 		printf("Error destroying mutex\n");
 	free(philo()->mutex_monitor);
+	if (pthread_mutex_destroy(philo()->mutex_is_dead) != 0)
+		printf("Error destroying mutex\n");
+	free(philo()->mutex_is_dead);
 	forks();
 	philos();
 }

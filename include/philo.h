@@ -7,6 +7,7 @@
 # include <pthread.h>
 # include <stdbool.h>
 # include <sys/time.h>
+# include <stdint.h>
 
 typedef enum e_errors
 {

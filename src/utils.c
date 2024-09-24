@@ -10,22 +10,6 @@ long	tv_since_start(void)
 	return (temp);
 }
 
-void	print_status(t_philo *data, t_pstate code)
-{
-	pthread_mutex_lock(philo()->mutex_message);
-	if (code == TAKEN_FORK)
-		printf("%ld %d has taken a fork\n", tv_since_start(), data->philo_id);
-	else if (code == EATING)
-		printf("%ld %d is eating\n", tv_since_start(), data->philo_id);
-	else if (code == THINKING)
-		printf("%ld %d is thinking\n", tv_since_start(), data->philo_id);
-	else if (code == SLEEPING)
-		printf("%ld %d is sleeping\n", tv_since_start(), data->philo_id);
-	else if (code == DIED)
-		printf("%ld %d died\n", tv_since_start(), data->philo_id);
-	pthread_mutex_unlock(philo()->mutex_message);
-}
-
 void	only_sleep(long time)
 {
 	time += tv_since_start();
@@ -49,11 +33,31 @@ int	someone_dead(void)
 	return (1);
 }
 
+void	h1(void)
+{
+	t_philo	*cur;
+
+	cur = philo()->philos;
+	print_status(cur, TAKEN_FORK);
+	while (1)
+	{
+		pthread_mutex_lock(philo()->mutex_is_dead);
+		if (philo()->is_dead == 1)
+		{
+			pthread_mutex_unlock(philo()->mutex_is_dead);
+			break ;
+		}
+		pthread_mutex_unlock(philo()->mutex_is_dead);
+		usleep(200);
+	}
+}
+
 void	handle_one_philo(void)
 {
-	print_status(philo()->philos, TAKEN_FORK);
-	while (philo()->is_dead != 1)
-		usleep(200);
+	t_philo	*cur;
+
+	cur = philo()->philos;
+	pthread_create(&cur->thread_id, NULL, (void *)h1, NULL);
 	if (pthread_join(philo()->monitor, NULL) != 0)
 		return ;
 	if (pthread_join(philo()->philos->thread_id, NULL) != 0)

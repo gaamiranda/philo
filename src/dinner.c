@@ -111,7 +111,7 @@ void	dinner_init(void)
 	i = 0;
 	if (pthread_join(philo()->monitor, NULL) != 0)
 		return ;
-	while (++i < philo()->num_philos)
+	while (++i <= philo()->num_philos)
 	{
 		if (pthread_join(cur->thread_id, NULL) != 0)
 			return ;
